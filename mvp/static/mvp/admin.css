@@ -1,0 +1,61 @@
+/* mvp/static/mvp/admin.css */
+body {
+    background-color: #f4f7fa; /* Pastel color 1 */
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    background-color: #c5e1a5; /* Pastel color 2 */
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.navbar a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.header {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.header h1 {
+    font-size: 36px;
+    color: #004d40; /* Darker shade for header text */
+}
+
+.content {
+    margin: 20px auto;
+    width: 80%;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.content table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.content table, .content th, .content td {
+    border: 1px solid #ccc;
+}
+
+.content th, .content td {
+    padding: 10px;
+    text-align: left;
+}
+
+.content th {
+    background-color: #c5e1a5; /* Same pastel color 2 */
+    color: #004d40; /* Darker shade for text */
+}
+
+.content tr:hover {
+    background-color: #f1f8e9;
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Management</title>
+    <style>
+        body {
+            background-color: #f7f7f7;
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .form-container {
+            width: 50%;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+    <script>
+        function editRecord(record) {
+            document.getElementById('edit-record-id').value = record.id;
+            document.getElementById('edit-plate-number').value = record.plate_number;
+            document.getElementById('edit-vehicle-type').value = record.vehicle_type;
+            document.getElementById('edit-check-in-time').value = record.check_in_time;
+            document.getElementById('edit-check-out-time').value = record.check_out_time;
+            document.getElementById('edit-form').style.display = 'block';
+        }
+        function deleteRecord(record) {
+            document.getElementById('delete-record-id').value = record.id;
+            document.getElementById('delete-form').style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <h1>Database Management</h1>
+
+    <div class="form-container">
+        <h2>Add New Record</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="form-group">
+                <label for="plate_number">Plate Number:</label>
+                {{ add_form.plate_number }}
+            </div>
+            <div class="form-group">
+                <label for="vehicle_type">Vehicle Type:</label>
+                {{ add_form.vehicle_type }}
+            </div>
+            <div class="form-group">
+                <label for="check_in_time">Check-in Time:</label>
+                {{ add_form.check_in_time }}
+            </div>
+            <div class="form-group">
+                <label for="check_out_time">Check-out Time:</label>
+                {{ add_form.check_out_time }}
+            </div>
+            <button type="submit" class="btn">Add Record</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Plate Number</th>
+                <th>Vehicle Type</th>
+                <th>Check-in Time</th>
+                <th>Check-out Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+                <tr>
+                    <td>{{ record.id }}</td>
+                    <td>{{ record.plate_number }}</td>
+                    <td>{{ record.vehicle_type }}</td>
+                    <td>{{ record.check_in_time }}</td>
+                    <td>{{ record.check_out_time }}</td>
+                    <td>
+                        <button class="btn" onclick="editRecord({{ record|safe }})">Edit</button>
+                        <button class="btn" onclick="deleteRecord({{ record|safe }})">Delete</button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="form-container" id="edit-form" style="display: none;">
+        <h2>Edit Record</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" id="edit-record-id" name="record_id">
+            <div class="form-group">
+                <label for="edit-plate-number">Plate Number:</label>
+                <input type="text" id="edit-plate-number" name="plate_number">
+            </div>
+            <div class="form-group">
+                <label for="edit-vehicle-type">Vehicle Type:</label>
+                <select id="edit-vehicle-type" name="vehicle_type">
+                    <option value="Car">Car</option>
+                    <option value="Motorbike">Motorbike</option>
+                    <option value="Bicycle">Bicycle</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="edit-check-in-time">Check-in Time:</label>
+                <input type="datetime-local" id="edit-check-in-time" name="check_in_time">
+            </div>
+            <div class="form-group">
+                <label for="edit-check-out-time">Check-out Time:</label>
+                <input type="datetime-local" id="edit-check-out-time" name="check_out_time">
+            </div>
+            <button type="submit" class="btn">Update Record</button>
+        </form>
+    </div>
+
+    <div class="form-container" id="delete-form" style="display: none;">
+        <h2>Delete Record</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" id="delete-record-id" name="record_id">
+            <p>Are you sure you want to delete this record?</p>
+            <button type="submit" class="btn">Delete</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <style>
+        body {
+            background-color: #b3d9ff; /* Pastel xanh dương */
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #e0b3ff; /* Tím nhạt */
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .navbar a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .header h1 {
+            font-size: 36px;
+            color: #003366; /* Đậm hơn cho tiêu đề */
+        }
+        .content {
+            margin: 20px auto;
+            width: 50%;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .content form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+        }
+        .content form label {
+            display: block;
+            margin-bottom: 5px;
+            color: #003366;
+        }
+        .content form button {
+            background-color: #e0b3ff;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .forgot-password {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .forgot-password a {
+            color: #003366;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'register' %}">Register</a>
+        <a href="{% url 'about_us' %}">About Us</a>
+        <a href="{% url 'contact_us' %}">Contact Us</a>
+    </div>
+    <div class="header">
+        <h1>Login</h1>
+    </div>
+    <div class="content">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <label>
+                <input type="checkbox" onclick="togglePassword()"> Show Password
+            </label>
+
+            <button type="submit">Login</button>
+        </form>
+        <div class="forgot-password">
+            <a href="{% url 'password_reset_combined' %}">Forgot Password?</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            var password = document.getElementById("password");
+            if (password.type === "password") {
+                password.type = "text";
+            } else {
+                password.type = "password";
+            }
+        }
+    </script>
+</body>
+</html>

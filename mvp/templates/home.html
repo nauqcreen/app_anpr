@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+    <style>
+        body {
+            background-color: #b3d9ff; /* Pastel xanh dương */
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #e0b3ff; /* Tím nhạt */
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .navbar a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .header h1 {
+            font-size: 48px;
+            color: #003366; /* Đậm hơn cho tiêu đề */
+        }
+        .content {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .content p {
+            font-size: 24px;
+            color: #004080; /* Màu xanh dương đậm cho nội dung */
+        }
+        .features {
+            text-align: left;
+            margin: 30px auto;
+            width: 80%;
+            font-size: 20px;
+            color: #004080;
+        }
+        .features ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .features li {
+            background-color: #e6f7ff;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'register' %}">Register</a>
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'about_us' %}">About Us</a>
+        <a href="{% url 'contact_us' %}">Contact Us</a>
+    </div>
+    <div class="header">
+        <h1>AutoPlate Tracking</h1>
+    </div>
+    <div class="content">
+        <p>On this management platform, we provide you:</p>
+        <div class="features">
+            <ul>
+                <li>Function 1: The admin account manages the vehicle access database, manages account and employee information, and other tasks under the authority of the facility manager parking area</li>
+                <li>Function 2: Dashboard manages employee information, the entrance to get in the workplace </li>
+                <li>Function 3: Workplace to test 2 Computer Vision models, vehicles cost updating, database for check-in - check out, extract check-in, check-out time and parking fee to display</li>
+                <li>Function 4: 2-way interaction between security guards and manager account</li>
+                <li>Function 5: Phân tích dữ liệu và báo cáo</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

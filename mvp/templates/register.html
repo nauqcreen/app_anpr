@@ -1,0 +1,159 @@
+<!-- mvp/templates/register.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <style>
+        body {
+            background-color: #b3d9ff; /* Pastel xanh dương */
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #e0b3ff; /* Tím nhạt */
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .navbar a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .header h1 {
+            font-size: 48px;
+            color: #003366; /* Đậm hơn cho tiêu đề */
+        }
+        .content {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .content form {
+            display: inline-block;
+            text-align: left;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .content form input,
+        .content form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+        }
+        .content form label {
+            display: block;
+            margin-bottom: 5px;
+            color: #003366;
+        }
+        .content form button {
+            background-color: #e0b3ff;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'about_us' %}">About Us</a>
+        <a href="{% url 'contact_us' %}">Contact Us</a>
+    </div>
+    <div class="header">
+        <h1>Register</h1>
+    </div>
+    <div class="content">
+        <form id="registerForm" method="post">
+            {% csrf_token %}
+            <label for="first_name">Name</label>
+            <input type="text" id="first_name" name="first_name" required>
+
+            <label for="last_name">Full Name</label>
+            <input type="text" id="last_name" name="last_name" required>
+
+            <label for="birth_date">Date of Birth</label>
+            <input type="date" id="birth_date" name="birth_date" required>
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" required>
+
+            <label for="hometown">Hometown</label>
+            <select id="hometown" name="hometown" required>
+                <option value="">Choose Hometown</option>
+                <!-- List 64 tỉnh thành -->
+                <option value="Hanoi">Hanoi</option>
+                <option value="Ho Chi Minh">Ho Chi Minh</option>
+                <option value="Thanh Hoa">Thanh Hoa</option>
+                <option value="Nghe An">Nghe An</option>
+                <option value="Ha Tinh">Ha Tinh</option>
+                <!-- Add other provinces here -->
+            </select>
+
+            <label for="job_position">Job Position</label>
+            <input type="text" id="job_position" name="job_position" required>
+
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+
+            <label>
+                <input type="checkbox" onclick="togglePassword()"> Show password
+            </label>
+
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePassword() {
+            var password = document.getElementById("password");
+            var confirmPassword = document.getElementById("confirm_password");
+            if (password.type === "password") {
+                password.type = "text";
+                confirmPassword.type = "text";
+            } else {
+                password.type = "password";
+                confirmPassword.type = "password";
+            }
+        }
+
+        document.getElementById("registerForm").onsubmit = function(event) {
+            event.preventDefault();
+
+            var form = this;
+            var password = document.getElementById("password").value;
+            var confirmPassword = document.getElementById("confirm_password").value;
+
+            if (password !== confirmPassword) {
+                alert("Password & Confirm Password are mismatched");
+                return false;
+            }
+
+            // Chec
