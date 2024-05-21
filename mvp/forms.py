@@ -1,5 +1,5 @@
 from django import forms
-from .models import CheckInOut, Profile
+from .models import CheckInOut, Profile, InOut
 
 class CheckInOutForm(forms.ModelForm):
     class Meta:

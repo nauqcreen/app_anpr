@@ -4,15 +4,26 @@ from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Feedback, ParkingFee, CheckInOut, CheckIn
+from .models import Profile, Feedback, ParkingFee, CheckInOut, InOut
 from django.utils import timezone
-from .autoplate import preprocess_image, deskew_plate, text, detect_objects, check_in, check_out, calculate_parking_fee
+from .autoplate import preprocess_image, deskew_plate, text, check_in, check_out, calculate_parking_fee
 import cv2
 import numpy as np
 import os
 from PIL import Image
 from io import BytesIO
 from .forms import CheckInOutForm, ProfileUpdateForm
+import json
+from django.views import View
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.core.files.storage import FileSystemStorage
+import math
+import easyocr
+from datetime import datetime
+from deskew import determine_skew
+from django.utils import timezone
 
 
 def home(request):
@@ -43,7 +54,7 @@ def register(request):
         user.profile.job_position = job_position
         user.profile.save()
         
-        messages.success(request, f'Chúc mừng {username} đăng kí tài khoản thành viên thành công!')
+        messages.success(request, f'{username} sign up your new account successfully !, the falcuty management will approve {username} profile if you are an employee !')
         return redirect('login')
     return render(request, 'register.html')
 
@@ -54,10 +65,10 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth_login(request, user)
-            messages.success(request, f'Chúc mừng {username} đã đăng nhập tài khoản thành công!')
+            messages.success(request, f'Congratulate {username} sign in successfully!')
             return redirect('dashboard')
         else:
-            messages.error(request, 'Tên đăng nhập hoặc mật khẩu không đúng.')
+            messages.error(request, 'Neither username nor password is not correct ! Recheck & enter again !')
     return render(request, 'login.html')
 
 def password_reset_combined(request):
@@ -85,6 +96,9 @@ def password_reset_combined(request):
 @login_required
 def dashboard(request):
     profile = request.user.profile
+    feedbacks = Feedback.objects.filter(user=request.user).order_by('-timestamp')
+    unread_feedbacks_count = feedbacks.filter(read=False).count()
+
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, instance=profile)
         if form.is_valid():
@@ -94,29 +108,72 @@ def dashboard(request):
     else:
         form = ProfileUpdateForm(instance=profile)
 
-    return render(request, 'dashboard.html', {'profile': profile, 'form': form})
+    return render(request, 'dashboard.html', {
+        'profile': profile,
+        'form': form,
+        'feedbacks': feedbacks,
+        'unread_feedbacks_count': unread_feedbacks_count
+    })
+
+@login_required
+def send_reply(request, feedback_id):
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+    if request.method == 'POST':
+        reply_text = request.POST['reply']
+        AdminReply.objects.create(feedback=feedback, reply=reply_text)
+        feedback.read = True
+        feedback.save()
+        messages.success(request, 'Reply sent successfully.')
+        return redirect('dashboard')
+    return render(request, 'dashboard')
+
+@login_required
+@csrf_exempt
+def mark_all_read(request):
+    if request.method == 'POST':
+        feedbacks = Feedback.objects.filter(user=request.user, read=False)
+        feedbacks.update(read=True)
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
 
 def about_us(request):
     return render(request, 'about_us.html')
 
-@login_required
-def check_in(request):
-    if request.method == 'POST':
-        start_time = request.POST['start_time']
-        end_time = request.POST['end_time']
-        date = timezone.now().date()
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckInOutView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            check_type = data.get('check_type')
+            user_id = data.get('user_id')
+            date = data.get('date')
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
 
-        check_in = CheckIn(
-            user=request.user,
-            start_time=start_time,
-            end_time=end_time,
-            date=date
-        )
-        check_in.save()
-        messages.success(request, "Check-in successful.")
-        return redirect('dashboard')
+            user = User.objects.get(id=user_id)
 
-    return render(request, 'dashboard.html')
+            if check_type == 'check-in':
+                InOut.objects.create(user=user, check_type=check_type, date=date, start_time=start_time, end_time=end_time)
+            elif check_type == 'check-out':
+                InOut.objects.create(user=user, check_type=check_type, date=date, start_time=start_time)
+
+            response = {
+                'status': 'success',
+                'message': f'{check_type.capitalize()} information received for {user.username} on {date} at {start_time}.'
+            }
+            return JsonResponse(response)
+        except User.DoesNotExist:
+            response = {
+                'status': 'error',
+                'message': 'User does not exist.'
+            }
+            return JsonResponse(response, status=404)
+        except Exception as e:
+            response = {
+                'status': 'error',
+                'message': str(e)
+            }
+            return JsonResponse(response, status=400)
 
 @login_required
 def contact_us(request):
@@ -127,98 +184,146 @@ def contact_us(request):
             feedback=feedback,
             timestamp=timezone.now()
         )
-        messages.success(request, 'Feedback của bạn đã được gửi đi đến admin thành công!')
+        messages.success(request, 'Your Feedback is sent to admin !')
         return redirect('contact_us')
     return render(request, 'contact_us.html', {'user': request.user})
 
-@login_required
+# Set the language for OCR
+reader = easyocr.Reader(['en'])
+
+# Image pre-processing function
+def preprocess_image(img):
+    img = cv2.resize(img, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.fastNlMeansDenoising(img, None, 30, 7, 21)
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    smooth = cv2.GaussianBlur(img, (1, 1), 0)
+    return smooth
+
+# Image deskewing function
+def deskew_plate(image):
+    try:
+        # Ensure the image has 3 channels
+        if len(image.shape) == 2 or image.shape[2] == 1:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        
+        grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        angle = determine_skew(grayscale)
+        old_width, old_height = image.shape[:2]
+        angle_radian = math.radians(angle)
+        width = abs(np.sin(angle_radian) * old_height) + abs(np.cos(angle_radian) * old_width)
+        height = abs(np.sin(angle_radian) * old_width) + abs(np.cos(angle_radian) * old_height)
+        image_center = tuple(np.array(image.shape[1::-1]) / 2)
+        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+        rot_mat[1, 2] += (width - old_width) / 2
+        rot_mat[0, 2] += (height - old_height) / 2
+        return cv2.warpAffine(image, rot_mat, (int(round(height)), int(round(width))), borderValue=(0, 0, 0))
+    except Exception as e:
+        print(f"Error deskewing plate: {e}")
+        return image
+
+# Text extraction function
+def text(img):
+    try:
+        plate_text = ''
+        for ele in reader.readtext(img, allowlist=".-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+            plate_text += str(ele[1])
+        return plate_text
+    except:
+        return ' '
+
+# Check-in function
+def check_in(plate_number, vehicle_type, image_url):
+    record, created = CheckInOut.objects.get_or_create(plate_number=plate_number, check_out_time__isnull=True)
+    if created:
+        record.check_in_time = timezone.now()  # Use timezone-aware datetime
+        record.vehicle_type = vehicle_type
+        record.image = image_url
+        record.save()
+    else:
+        return record
+
+# Calculate parking fee function
+def calculate_parking_fee(record):
+    if record and record.check_out_time:
+        check_in_time = record.check_in_time
+        check_out_time = record.check_out_time
+        parking_duration = (check_out_time - check_in_time).total_seconds() / 3600  # Convert to hours
+        fee_per_hour = 100000  # Example fee
+        return parking_duration * fee_per_hour
+    return 0
+
+# Check-out function
+def check_out(plate_number):
+    try:
+        record = CheckInOut.objects.get(plate_number=plate_number, check_out_time__isnull=True)
+        record.check_out_time = timezone.now()  # Use timezone-aware datetime
+        record.parking_fee = calculate_parking_fee(record)  # Save parking fee
+        record.save()
+        return record
+    except CheckInOut.DoesNotExist:
+        return None
+
+# Main view function
 def workplace(request):
-    if request.user.is_superuser:
-        return redirect('/admin/')  # Chuyển hướng đến trang quản lý admin nếu người dùng là admin
-
-    vehicle_types = ['Car', 'Motorbike', 'Bicycle']
-    check_in_record = None
-    parking_fee = None
-    records = CheckInOut.objects.all()
-
     if request.method == 'POST':
         action = request.POST.get('action')
+
         if action == 'process_image':
-            confidence_threshold = float(request.POST.get('confidence_threshold', 0.5))
-            model_type = request.POST.get('model_type', 'v8')
-            vehicle_type = request.POST.get('vehicle_type', 'Car')
-            image = request.FILES.get('image')
-            
-            if image:
-                plate_number, processed_img = recognize_plate(image, model_type, confidence_threshold)
-                if plate_number:
-                    check_in_records = CheckInOut.objects.filter(plate_number=plate_number, check_out_time__isnull=True)
-                    if not check_in_records.exists():
-                        check_in_record = CheckInOut.objects.create(
-                            plate_number=plate_number,
-                            vehicle_type=vehicle_type,
-                            check_in_time=timezone.now(),
-                            image=image
-                        )
-                        messages.success(request, f'Check-in successful! Plate number: {plate_number}')
-                    else:
-                        check_in_record = check_in_records.first()
-                        check_in_record.check_out_time = timezone.now()
-                        check_in_record.image = image
-                        check_in_record.save()
-                        parking_fee = calculate_parking_fee(plate_number)
-                        messages.success(request, f'Check-out successful! Plate number: {plate_number}. Parking fee: {parking_fee} VNĐ')
-            return redirect('workplace')
+            confidence_threshold = float(request.POST.get('confidence_threshold'))
+            model_type = request.POST.get('model_type')
+            vehicle_type = request.POST.get('vehicle_type')
+
+            image_file = request.FILES['image']
+            fs = FileSystemStorage()
+            filename = fs.save(image_file.name, image_file)
+            uploaded_file_url = fs.url(filename)
+
+            # Read the image file correctly
+            image_file.open()  # Reopen the file to reset the read pointer
+            image_data = np.frombuffer(image_file.read(), np.uint8)
+            if image_data.size != 0:
+                image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                processed_image = preprocess_image(image)
+                deskewed_image = deskew_plate(processed_image)
+                plate_text = text(deskewed_image)
+                
+                if plate_text.strip():
+                    record = check_in(plate_text, vehicle_type, uploaded_file_url)
+                    if not record:
+                        record = check_out(plate_text)
+                    
+                    parking_fee = calculate_parking_fee(record)
+
+                    return render(request, 'workplace.html', {
+                        'check_in_record': record,
+                        'parking_fee': parking_fee
+                    })
+                else:
+                    print("Error: The plate text is empty.")
+                    return render(request, 'workplace.html', {'error': 'The plate text is empty or could not be recognized.'})
+            else:
+                print("Error: The image buffer is empty.")
+                return render(request, 'workplace.html', {'error': 'The uploaded image is empty or corrupted.'})
 
         elif action == 'add':
-            form = CheckInOutForm(request.POST)
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'Record added successfully!')
-                return redirect('workplace')
+            # Handle adding new records here
+            pass
+
         elif action == 'edit':
-            record_id = request.POST.get('record_id')
-            record = get_object_or_404(CheckInOut, id=record_id)
-            form = CheckInOutForm(request.POST, instance=record)
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'Record updated successfully!')
-                return redirect('workplace')
+            # Handle editing records here
+            pass
+
         elif action == 'delete':
-            record_id = request.POST.get('record_id')
-            record = get_object_or_404(CheckInOut, id=record_id)
-            record.delete()
-            messages.success(request, 'Record deleted successfully!')
-            return redirect('workplace')
+            # Handle deleting records here
+            pass
 
-    add_form = CheckInOutForm()
-    return render(request, 'workplace.html', {'vehicle_types': vehicle_types, 'records': records, 'check_in_record': check_in_record, 'parking_fee': parking_fee, 'add_form': add_form})
+        elif action == 'update_fee':
+            # Handle updating fee here
+            pass
 
-def recognize_plate(image, model_type, confidence_threshold):
-    img = Image.open(image)
-    img = img.convert('RGB')  # Ensure image is in RGB format
-    img = np.array(img)
+    records = CheckInOut.objects.all()
+    return render(request, 'workplace.html', {'records': records})
 
-    if img.ndim == 3 and img.shape[2] == 3:
-        img = img[..., ::-1]  # Convert RGB to BGR if needed
-
-    img = preprocess_image(img)
-
-    plates, img = detect_objects(img, confidence_threshold, model_type)
-
-    if plates:
-        plate_number = text(plates[0])  # Assuming one plate per image for simplicity
-        return plate_number, img
-    return None, img
-
-
-def calculate_fee(check_in_record):
-    check_in_time = check_in_record.check_in_time
-    check_out_time = check_in_record.check_out_time
-    duration = (check_out_time - check_in_time).total_seconds() / 3600  # duration in hours
-    vehicle_type = check_in_record.vehicle_type
-    parking_fee = ParkingFee.objects.get(vehicle_type=vehicle_type)
-    if parking_fee.fee_per_hour is None:
-        return 0
-    fee = duration * parking_fee.fee_per_hour
-    return round(fee, 2)

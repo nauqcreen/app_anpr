@@ -3,6 +3,7 @@ from . import views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import CheckInOutView
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -15,4 +16,6 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('password_reset_combined/', views.password_reset_combined, name='password_reset_combined'),
     path('check_in/', views.check_in, name='check_in'),
+    path('api/checkinout/', CheckInOutView.as_view(), name='checkinout'),
+    path('mark_all_read/', views.mark_all_read, name='mark_all_read'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

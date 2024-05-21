@@ -39,7 +39,9 @@ class CheckInOut(models.Model):
     vehicle_type = models.CharField(max_length=10, choices=VEHICLE_TYPES, default='Car')
     check_in_time = models.DateTimeField(null=True, blank=True)
     check_out_time = models.DateTimeField(null=True, blank=True)
-
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
+    parking_fee = models.FloatField(default=0.0)  # Ensure this line is present
+    
     def __str__(self):
         return self.plate_number
 
@@ -63,12 +65,13 @@ class AdminReply(models.Model):
     def __str__(self):
         return f"Reply to {self.feedback.user.username} on {self.timestamp}"
 
-class CheckIn(models.Model):
+class InOut(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    check_type = models.CharField(max_length=10)
     date = models.DateField()
-    checked_in = models.BooleanField(default=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    parking_fee = models.FloatField(default=0.0)  # Add this line
 
     def __str__(self):
-        return f'{self.user.username} - {self.date}'
+        return f"{self.user.username} - {self.check_type} on {self.date} at {self.start_time}"

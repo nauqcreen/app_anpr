@@ -4,28 +4,41 @@
     <title>Dashboard</title>
     <style>
         body {
-            background-color: #b3d9ff; /* Pastel xanh dương */
+            background-color: #b3d9ff; /* Light blue by default */
+            color: #000;
             font-family: Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
         .navbar {
-            background-color: #e0b3ff; /* Tím nhạt */
+            background-color: #e0b3ff; /* Light purple */
             padding: 10px;
             display: flex;
             justify-content: space-around;
+            align-items: center;
+            transition: background-color 0.3s;
         }
         .navbar a {
             color: #ffffff;
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
+            transition: color 0.3s;
+        }
+        .navbar input[type="text"] {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
         }
         .header {
             text-align: center;
             margin-top: 20px;
+            transition: color 0.3s;
         }
         .header h1 {
             font-size: 36px;
-            color: #003366; /* Đậm hơn cho tiêu đề */
+            color: #003366; /* Darker for the title */
+            transition: color 0.3s;
         }
         .container {
             display: flex;
@@ -38,10 +51,12 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, color 0.3s;
         }
         .left h2, .right h2 {
             text-align: center;
             color: #003366;
+            transition: color 0.3s;
         }
         .right h2 {
             cursor: pointer;
@@ -56,12 +71,13 @@
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
+            transition: color 0.3s;
         }
         .floating-btn {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background-color: #d9b3ff; /* Pastel tím */
+            background-color: #d9b3ff; /* Light purple */
             color: #ffffff;
             border: none;
             padding: 15px;
@@ -69,6 +85,7 @@
             cursor: pointer;
             font-size: 24px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, color 0.3s;
         }
         .floating-btn span {
             position: absolute;
@@ -90,6 +107,7 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             display: none;
+            transition: background-color 0.3s, color 0.3s;
         }
         .message-popup.active {
             display: block;
@@ -99,51 +117,120 @@
             margin: 10px 0;
             padding: 10px;
             border: 1px #ccc solid;
+            transition: background-color 0.3s, color 0.3s;
         }
         .message h3 {
             margin: 0 0 5px;
+            transition: color 0.3s;
         }
         .reply {
             background: #e6f7ff;
             margin: 10px 0;
             padding: 10px;
             border: 1px #ccc solid;
+            transition: background-color 0.3s, color 0.3s;
         }
-        .check-in {
-            background-color: #e0f7fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
+        .dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+        .dark-mode .navbar {
+            background-color: #444;
+        }
+        .dark-mode .navbar a {
+            color: #fff;
+        }
+        .dark-mode .left, .dark-mode .right {
+            background-color: #555;
+            color: #fff;
+        }
+        .dark-mode .left h2, .dark-mode .right h2 {
+            color: #fff;
+        }
+        .dark-mode .workplace-link a {
+            color: #fff;
+        }
+        .dark-mode .floating-btn {
+            background-color: #666;
+        }
+        .dark-mode .message-popup {
+            background-color: #555;
+            color: #fff;
+        }
+        .dark-mode .message {
+            background-color: #666;
+            color: #fff;
+        }
+        .dark-mode .message h3 {
+            color: #fff;
+        }
+        .dark-mode .reply {
+            background-color: #777;
+            color: #fff;
+        .dark-mode .header {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .dark-mode .header h1 {
+            color: #fff;
+        }
+        }
+        .check-in, .check-out {
             text-align: center;
-        }
-        .check-in input[type="time"] {
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #cccccc;
-            border-radius: 5px;
-            width: calc(50% - 22px); /* to align with 50% width */
-            display: inline-block;
-        }
-        .check-in button {
-            background-color: #e0b3ff;
-            color: #ffffff;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .check-in .date-display {
             margin-top: 20px;
-            font-size: 14px;
-            color: #003366;
             opacity: 0.5;
+        }
+        .check-in input, .check-out input {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin: 5px;
         }
     </style>
     <script>
+        async function sendCheckInOutData(checkType, userId, date, startTime, endTime) {
+            const response = await fetch('/api/checkinout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    check_type: checkType,
+                    user_id: userId,
+                    date: date,
+                    start_time: startTime,
+                    end_time: endTime
+                })
+            });
+            return response.json();
+        }
+
+        async function markAllAsRead() {
+            const response = await fetch('/mark_all_read/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+            if (response.ok) {
+                document.getElementById('unreadMessagesCount').textContent = '0';
+                var messages = document.getElementsByClassName('message');
+                for (var i = 0; i < messages.length; i++) {
+                    messages[i].classList.remove('unread');
+                }
+            }
+        }
+
         function toggleMessagePopup() {
             var messagePopup = document.getElementById('message-popup');
             messagePopup.classList.toggle('active');
+            markAllAsRead();
         }
+
         function toggleProfileInfo() {
             var profileInfo = document.getElementById("profile-info");
             var updateForm = document.getElementById("update-form");
@@ -155,31 +242,91 @@
                 profileInfo.style.display = "block";
             }
         }
+
         function showWorkplaceLink() {
             document.getElementById("workplace-link").style.display = "block";
         }
-        function toggleNotifications() {
-            var notifications = document.getElementById('notifications');
-            notifications.classList.toggle('active');
-        }
+
         function toggleDarkMode() {
-            var body = document.body;
-            body.classList.toggle('dark-mode');
+            document.body.classList.toggle('dark-mode');
         }
-        function displayCurrentDate() {
-            var today = new Date();
-            var dateDisplay = document.getElementById('date-display');
-            dateDisplay.innerHTML = today.toDateString();
+
+        function search() {
+            var input, filter, left, right, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            left = document.getElementsByClassName("left")[0];
+            right = document.getElementsByClassName("right")[0];
+            if (left) {
+                txtValue = left.textContent || left.innerText;
+                left.style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            }
+            if (right) {
+                txtValue = right.textContent || right.innerText;
+                right.style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            }
         }
-        window.onload = displayCurrentDate;
+
+        function formatDate(date) {
+            let d = new Date(date),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+
+            if (month.length < 2) 
+                month = '0' + month;
+            if (day.length < 2) 
+                day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        async function checkIn() {
+            var startTime = document.getElementById("startTime").value;
+            var endTime = document.getElementById("endTime").value;
+            var checkInMessage = document.getElementById("checkInMessage");
+            var currentDate = formatDate(new Date());
+            var userId = "{{ user.id }}";
+
+            if (startTime && endTime) {
+                const response = await sendCheckInOutData('check-in', userId, currentDate, startTime, endTime);
+                if (response.status === 'success') {
+                    checkInMessage.innerHTML = `Welcome, {{ profile.user.first_name }} {{ profile.user.last_name }}!<br>Checked in on: ${currentDate}<br>Start Time: ${startTime}<br>End Time: ${endTime}`;
+                } else {
+                    checkInMessage.innerHTML = response.message;
+                }
+            } else {
+                checkInMessage.innerHTML = "Please enter both start and end times.";
+            }
+        }
+
+        async function checkOut() {
+            var checkOutTime = document.getElementById("checkOutTime").value;
+            var checkOutMessage = document.getElementById("checkOutMessage");
+            var currentDate = formatDate(new Date());
+            var userId = "{{ user.id }}";
+            var checkOutConfirmed = document.getElementById("checkOutConfirmed").checked;
+
+            if (checkOutTime && checkOutConfirmed) {
+                const response = await sendCheckInOutData('check-out', userId, currentDate, checkOutTime, null);
+                if (response.status === 'success') {
+                    checkOutMessage.innerHTML = `Goodbye, {{ profile.user.first_name }} {{ profile.user.last_name }}!<br>Checked out on: ${currentDate}<br>Check-Out Time: ${checkOutTime}`;
+                } else {
+                    checkOutMessage.innerHTML = response.message;
+                }
+            } else {
+                checkOutMessage.innerHTML = "Please enter the check-out time and confirm.";
+            }
+        }
     </script>
 </head>
 <body>
     <div class="navbar">
         <a href="{% url 'home' %}">Home</a>
-        <a href="{% url 'register' %}">Register</a>
         <a href="{% url 'about_us' %}">About Us</a>
         <a href="{% url 'contact_us' %}">Contact Us</a>
+        <input type="text" id="searchInput" placeholder="Search..." onkeyup="search()">
+        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
     </div>
     <div class="header">
         <h1>Dashboard</h1>
@@ -218,24 +365,28 @@
         </div>
     </div>
     <div class="check-in">
-        <h2>Check-In</h2>
-        <form method="post" action="{% url 'check_in' %}">
-            {% csrf_token %}
-            <label for="start_time">Start Time:</label>
-            <input type="time" id="start_time" name="start_time" required>
-            <label for="end_time">End Time:</label>
-            <input type="time" id="end_time" name="end_time" required>
-            <button type="submit">Check In</button>
-        </form>
-        <div id="date-display" class="date-display"></div>
+        <h2>Check In</h2>
+        <p>Date: <span id="currentDate"></span></p>
+        <input type="time" id="startTime" placeholder="Start Time">
+        <input type="time" id="endTime" placeholder="End Time">
+        <button onclick="checkIn()">Check In</button>
+        <p id="checkInMessage"></p>
+    </div>
+    <div class="check-out">
+        <h2>Check Out</h2>
+        <input type="time" id="checkOutTime" placeholder="Check-Out Time">
+        <label for="checkOutConfirmed">Confirm Check-Out</label>
+        <input type="checkbox" id="checkOutConfirmed">
+        <button onclick="checkOut()">Check Out</button>
+        <p id="checkOutMessage"></p>
     </div>
     <button class="floating-btn" onclick="toggleMessagePopup()">
         ✉️
-        <span>{{ unread_messages_count }}</span>
+        <span id="unreadMessagesCount">{{ unread_feedbacks_count }}</span>
     </button>
     <div id="message-popup" class="message-popup">
         {% for feedback in feedbacks %}
-            <div class="message">
+            <div class="message {% if not feedback.read %}unread{% endif %}">
                 <h3>Feedback:</h3>
                 <p>{{ feedback.feedback }}</p>
                 <p><strong>Sent on:</strong> {{ feedback.timestamp }}</p>
@@ -249,5 +400,8 @@
             </div>
         {% endfor %}
     </div>
+    <script>
+        document.getElementById('currentDate').textContent = formatDate(new Date());
+    </script>
 </body>
 </html>

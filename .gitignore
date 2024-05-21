@@ -1,1 +1,43 @@
-*.pyc __pycache__/ db.sqlite3 venv/ .env
+# Python
+*.pyc
+__pycache__/
+
+# Django
+*.log
+*.pot
+*.py[cod]
+*~
+*.swp
+*.sqlite3
+
+# Environments
+.env
+venv/
+env/
+.venv/
+.envrc
+
+# IDEs
+.vscode/
+.idea/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/

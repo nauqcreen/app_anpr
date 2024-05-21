@@ -4,7 +4,7 @@
     <title>Workplace</title>
     <style>
         body {
-            background-color: #e6f7ff; /* Pastel xanh dương */
+            background-color: #e6f7ff;
             font-family: Arial, sans-serif;
             display: flex;
         }
@@ -14,7 +14,7 @@
         }
         .left {
             background-color: #ffffff;
-            border-right: 2px solid #d9b3ff; /* Pastel tím */
+            border-right: 2px solid #d9b3ff;
         }
         .right {
             background-color: #ffffff;
@@ -26,18 +26,18 @@
         }
         .header h1 {
             font-size: 36px;
-            color: #003366; /* Đậm hơn cho tiêu đề */
+            color: #003366;
         }
         .header h2 {
             font-size: 24px;
-            color: #003366; /* Đậm hơn cho tiêu đề */
+            color: #003366;
         }
         .content h2 {
             text-align: center;
             color: #003366;
         }
         .btn {
-            background-color: #d9b3ff; /* Pastel tím */
+            background-color: #d9b3ff;
             color: #ffffff;
             border: none;
             padding: 10px 20px;
@@ -79,7 +79,7 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background-color: #d9b3ff; /* Pastel tím */
+            background-color: #d9b3ff;
             color: #ffffff;
             border: none;
             padding: 15px;
@@ -94,7 +94,7 @@
             right: 0;
             height: 100%;
             width: 250px;
-            background-color: #d9b3ff; /* Pastel tím */
+            background-color: #d9b3ff;
             padding: 20px;
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
             transform: translateX(100%);
@@ -114,7 +114,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #d9b3ff; /* Pastel tím */
+            background-color: #d9b3ff;
             color: #ffffff;
             border: none;
             padding: 10px;
@@ -236,9 +236,9 @@
         <div id="recognition-result">
             {% if check_in_record %}
                 <p>Biển số nhận diện được: {{ check_in_record.plate_number }}</p>
-                <p>Check-in: {{ check_in_record.check_in_time }}</p>
+                <p>Check-in: {{ check_in_record.check_in_time|date:"F j, Y, g:i a" }}</p>
                 {% if check_in_record.check_out_time %}
-                    <p>Check-out: {{ check_in_record.check_out_time }}</p>
+                    <p>Check-out: {{ check_in_record.check_out_time|date:"F j, Y, g:i a" }}</p>
                     <p>Parking Fee: {{ parking_fee }} VNĐ</p>
                 {% endif %}
             {% endif %}
@@ -298,8 +298,8 @@
                         <td>{{ record.id }}</td>
                         <td>{{ record.plate_number }}</td>
                         <td>{{ record.vehicle_type }}</td>
-                        <td>{{ record.check_in_time }}</td>
-                        <td>{{ record.check_out_time }}</td>
+                        <td>{{ record.check_in_time|date:"F j, Y, g:i a" }}</td>
+                        <td>{{ record.check_out_time|date:"F j, Y, g:i a" }}</td>
                         <td>
                             <button class="btn" onclick="editRecord({{ record|safe }})">Edit</button>
                             <button class="btn" onclick="deleteRecord({{ record|safe }})">Delete</button>
